@@ -2,7 +2,7 @@
 
 Browser-based calculators for everyday HPLC/UHPLC work. It is a static site with no build step and no dependencies, and all calculations run locally in the browser.
 
-**Live site:** https://kogason2010.github.io/hplc-tools/
+**Live site:** https://kogason2010.github.io/HPLC-tools/
 
 ## Calculators
 
