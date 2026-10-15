@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HPLC Tools</title>
+<meta name="description" content="Free browser-based HPLC calculators: method transfer and column scaling, system suitability, buffer preparation, backpressure and viscosity, column volume and solvent use, unit conversion.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <h1>HPLC Tools</h1>
+    <p class="lede">Everyday liquid-chromatography calculations, in the browser. Nothing is uploaded — all math runs locally.</p>
+  </div>
+  <nav class="tabs wrap" role="tablist" aria-label="Calculators">
+    <button role="tab" data-tab="transfer" aria-selected="true">Method transfer</button>
+    <button role="tab" data-tab="sst">System suitability</button>
+    <button role="tab" data-tab="buffer">Buffer prep</button>
+    <button role="tab" data-tab="pressure">Pressure &amp; viscosity</button>
+    <button role="tab" data-tab="column">Column &amp; solvent</button>
+    <button role="tab" data-tab="units">Units</button>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<!-- ============ METHOD TRANSFER ============ -->
+<section id="transfer" class="panel" role="tabpanel">
+  <h2>Method transfer &amp; column scaling</h2>
+  <p class="hint">Geometric scaling between columns (e.g. HPLC → UHPLC), including the gradient table and dwell-volume compensation. Checks the USP &lt;621&gt; L/d<sub>p</sub> window.</p>
+
+  <div class="grid2">
+    <fieldset>
+      <legend>Original method</legend>
+      <label>Column length L <span class="u">mm</span><input type="number" id="t_L1" value="150" step="any"></label>
+      <label>Column i.d. d<sub>c</sub> <span class="u">mm</span><input type="number" id="t_d1" value="4.6" step="any"></label>
+      <label>Particle size d<sub>p</sub> <span class="u">µm</span><input type="number" id="t_p1" value="5" step="any"></label>
+      <label>Flow rate <span class="u">mL/min</span><input type="number" id="t_F1" value="1.0" step="any"></label>
+      <label>Injection volume <span class="u">µL</span><input type="number" id="t_V1" value="10" step="any"></label>
+      <label>System dwell volume <span class="u">mL</span><input type="number" id="t_D1" value="1.0" step="any"></label>
+      <label>Back-pressure (optional) <span class="u">bar</span><input type="number" id="t_P1" value="" step="any" placeholder="—"></label>
+    </fieldset>
+    <fieldset>
+      <legend>New column / system</legend>
+      <label>Column length L <span class="u">mm</span><input type="number" id="t_L2" value="50" step="any"></label>
+      <label>Column i.d. d<sub>c</sub> <span class="u">mm</span><input type="number" id="t_d2" value="2.1" step="any"></label>
+      <label>Particle size d<sub>p</sub> <span class="u">µm</span><input type="number" id="t_p2" value="1.7" step="any"></label>
+      <label>System dwell volume <span class="u">mL</span><input type="number" id="t_D2" value="0.35" step="any"></label>
+      <label class="check"><input type="checkbox" id="t_dpflow" checked> Scale flow by d<sub>p</sub> (constant reduced velocity — USP &lt;621&gt;)</label>
+      <label>Extra flow adjustment <span class="u">%</span><input type="number" id="t_extra" value="0" step="any"></label>
+    </fieldset>
+  </div>
+
+  <div class="results" id="t_out"></div>
+
+  <h3>Gradient table</h3>
+  <p class="hint">Enter the original program. Times are scaled to keep the same gradient volume per column volume.</p>
+  <div class="grid2">
+    <div>
+      <div class="gtable-wrap">
+        <table class="gtable" id="t_grad">
+          <thead><tr><th>Original time (min)</th><th>%B</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <button class="btn ghost" id="t_addrow">+ Add step</button>
+    </div>
+    <div>
+      <div class="gtable-wrap">
+        <table class="gtable" id="t_gout">
+          <thead><tr><th>New time (min)</th><th>%B</th><th>Flow (mL/min)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="t_hold" checked> Include dwell-volume hold in the new program</label>
+    </div>
+  </div>
+  <div class="note" id="t_dwell"></div>
+
+  <details class="theory">
+    <summary>Equations used</summary>
+    <ul>
+      <li>Flow: F<sub>2</sub> = F<sub>1</sub> · (d<sub>c2</sub>²/d<sub>c1</sub>²) · (d<sub>p1</sub>/d<sub>p2</sub>) — the d<sub>p</sub> term is optional.</li>
+      <li>Injection volume: V<sub>2</sub> = V<sub>1</sub> · (L<sub>2</sub> d<sub>c2</sub>²)/(L<sub>1</sub> d<sub>c1</sub>²)</li>
+      <li>Gradient times: t<sub>2</sub> = t<sub>1</sub> · (F<sub>1</sub>/F<sub>2</sub>) · (L<sub>2</sub> d<sub>c2</sub>²)/(L<sub>1</sub> d<sub>c1</sub>²)</li>
+      <li>Pressure ratio (same mobile phase): P<sub>2</sub>/P<sub>1</sub> = (F<sub>2</sub>/F<sub>1</sub>)(L<sub>2</sub>/L<sub>1</sub>)(d<sub>c1</sub>/d<sub>c2</sub>)²(d<sub>p1</sub>/d<sub>p2</sub>)²</li>
+      <li>Dwell: the original dwell volume, scaled to the new column volume, is compared with the new system's dwell volume. A shortfall is made up with an initial isocratic hold; an excess can be offset by delaying injection, if the system supports it.</li>
+      <li>USP &lt;621&gt; (harmonized, official Dec 2022): L/d<sub>p</sub> may change by −25% to +50% for isocratic and gradient methods. Always confirm against the current official chapter and verify system suitability.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ SYSTEM SUITABILITY ============ -->
+<section id="sst" class="panel" role="tabpanel" hidden>
+  <h2>System suitability</h2>
+  <p class="hint">Retention factor, selectivity, plate count, resolution and tailing from peak measurements. Use consistent time units.</p>
+
+  <div class="grid2">
+    <fieldset>
+      <legend>Peak data</legend>
+      <label>Dead time t<sub>0</sub> <span class="u">min</span><input type="number" id="s_t0" value="1.2" step="any"></label>
+      <label>Width basis
+        <select id="s_basis">
+          <option value="half">Width at half height (w<sub>½</sub>)</option>
+          <option value="base">Tangent baseline width (w<sub>b</sub>)</option>
+        </select>
+      </label>
+      <div class="pair">
+        <span class="pairhead">Peak 1</span>
+        <label>t<sub>R</sub> <span class="u">min</span><input type="number" id="s_tr1" value="5.40" step="any"></label>
+        <label>Width <span class="u">min</span><input type="number" id="s_w1" value="0.080" step="any"></label>
+      </div>
+      <div class="pair">
+        <span class="pairhead">Peak 2</span>
+        <label>t<sub>R</sub> <span class="u">min</span><input type="number" id="s_tr2" value="5.85" step="any"></label>
+        <label>Width <span class="u">min</span><input type="number" id="s_w2" value="0.085" step="any"></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Tailing factor (USP)</legend>
+      <label>Width at 5% height W<sub>0.05</sub> <span class="u">min</span><input type="number" id="s_w005" value="0.16" step="any"></label>
+      <label>Front half-width at 5% f <span class="u">min</span><input type="number" id="s_f" value="0.072" step="any"></label>
+      <div class="results compact" id="s_tail"></div>
+    </fieldset>
+  </div>
+  <div class="results" id="s_out"></div>
+
+  <h3>Resolution what-if (Purnell equation)</h3>
+  <div class="grid3">
+    <label>Plates N<input type="number" id="p_N" value="10000" step="any"></label>
+    <label>Selectivity α<input type="number" id="p_a" value="1.10" step="any"></label>
+    <label>Retention factor k (2nd peak)<input type="number" id="p_k" value="4" step="any"></label>
+    <label>Target R<sub>s</sub><input type="number" id="p_rs" value="2.0" step="any"></label>
+  </div>
+  <div class="results" id="p_out"></div>
+  <canvas id="p_chart" class="chart" height="220" aria-label="Contribution of each term to resolution"></canvas>
+
+  <details class="theory">
+    <summary>Equations used</summary>
+    <ul>
+      <li>k = (t<sub>R</sub> − t<sub>0</sub>)/t<sub>0</sub>; α = k<sub>2</sub>/k<sub>1</sub></li>
+      <li>N = 5.54 (t<sub>R</sub>/w<sub>½</sub>)² or N = 16 (t<sub>R</sub>/w<sub>b</sub>)²</li>
+      <li>R<sub>s</sub> = 1.18 (t<sub>R2</sub> − t<sub>R1</sub>)/(w<sub>½1</sub> + w<sub>½2</sub>) or R<sub>s</sub> = 2 (t<sub>R2</sub> − t<sub>R1</sub>)/(w<sub>b1</sub> + w<sub>b2</sub>)</li>
+      <li>Tailing T = W<sub>0.05</sub>/(2f)</li>
+      <li>Purnell: R<sub>s</sub> = (√N/4) · ((α−1)/α) · (k/(1+k)); required N = 16 R<sub>s</sub>² (α/(α−1))² ((1+k)/k)²</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ BUFFER ============ -->
+<section id="buffer" class="panel" role="tabpanel" hidden>
+  <h2>Buffer preparation</h2>
+  <p class="hint">Henderson–Hasselbalch estimate of how much acid and conjugate-base form to weigh for a target pH and total buffer concentration.</p>
+  <div class="grid2">
+    <fieldset>
+      <legend>Buffer</legend>
+      <label>Buffer system<select id="b_sys"></select></label>
+      <label>Target pH<input type="number" id="b_pH" value="3.0" step="0.01"></label>
+      <label>Total concentration <span class="u">mM</span><input type="number" id="b_c" value="20" step="any"></label>
+      <label>Final volume <span class="u">mL</span><input type="number" id="b_v" value="1000" step="any"></label>
+    </fieldset>
+    <div class="results" id="b_out"></div>
+  </div>
+  <div class="note warn">
+    These are starting amounts. Henderson–Hasselbalch ignores activity effects, so the measured pH typically differs by up to a few tenths (more for phosphate pKa<sub>2</sub>). Dissolve in ~90% of the water, check with a calibrated pH meter, adjust, then make to volume. Set the pH of the aqueous portion <em>before</em> adding organic solvent.
+  </div>
+  <details class="theory">
+    <summary>pK<sub>a</sub> and reagent data used</summary>
+    <div id="b_table"></div>
+  </details>
+</section>
+
+<!-- ============ PRESSURE ============ -->
+<section id="pressure" class="panel" role="tabpanel" hidden>
+  <h2>Back-pressure &amp; viscosity</h2>
+  <p class="hint">Estimates mobile-phase viscosity for water–acetonitrile or water–methanol and the column pressure drop from Darcy's law.</p>
+  <div class="grid2">
+    <fieldset>
+      <legend>Mobile phase</legend>
+      <label>Organic modifier<select id="v_org"><option value="acn">Acetonitrile</option><option value="meoh">Methanol</option></select></label>
+      <label>Organic content <span class="u">% v/v</span><input type="number" id="v_pct" value="50" step="any" min="0" max="100"></label>
+      <label>Temperature <span class="u">°C</span><input type="number" id="v_T" value="40" step="any"></label>
+      <label>Override viscosity (optional) <span class="u">cP</span><input type="number" id="v_eta" value="" step="any" placeholder="calculated"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Column</legend>
+      <label>Length <span class="u">mm</span><input type="number" id="v_L" value="100" step="any"></label>
+      <label>i.d. <span class="u">mm</span><input type="number" id="v_d" value="2.1" step="any"></label>
+      <label>Particle size <span class="u">µm</span><input type="number" id="v_dp" value="1.9" step="any"></label>
+      <label>Flow rate <span class="u">mL/min</span><input type="number" id="v_F" value="0.4" step="any"></label>
+      <label>Flow resistance factor φ<input type="number" id="v_phi" value="1000" step="any"></label>
+    </fieldset>
+  </div>
+  <div class="results" id="v_out"></div>
+  <canvas id="v_chart" class="chart" height="240" aria-label="Viscosity versus organic content"></canvas>
+  <details class="theory">
+    <summary>Equations &amp; limits</summary>
+    <ul>
+      <li>ΔP = φ · η · L · u / d<sub>p</sub>², with u = F/(π d<sub>c</sub>²/4) (superficial velocity). φ ≈ 1000 is typical for packed beds; real columns vary by roughly ±30%, so treat the result as an estimate and calibrate φ against a measured pressure if you can.</li>
+      <li>Viscosity: empirical fit of ln η against volume fraction and 1/T for each binary mixture. It reproduces pure water, methanol and acetonitrile viscosities and the methanol–water maximum (≈1.6 cP near 40–50% at 25 °C) reasonably well; treat mid-range values as approximate (±10–15%). It ignores buffer salts and additives.</li>
+      <li>System pressure (tubing, mixer, detector) is not included.</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ COLUMN ============ -->
+<section id="column" class="panel" role="tabpanel" hidden>
+  <h2>Column volume, t<sub>0</sub> &amp; solvent use</h2>
+  <div class="grid2">
+    <fieldset>
+      <legend>Column</legend>
+      <label>Length <span class="u">mm</span><input type="number" id="c_L" value="150" step="any"></label>
+      <label>i.d. <span class="u">mm</span><input type="number" id="c_d" value="4.6" step="any"></label>
+      <label>Particle type
+        <select id="c_type">
+          <option value="0.65">Fully porous (ε ≈ 0.65)</option>
+          <option value="0.50">Superficially porous / core–shell (ε ≈ 0.50)</option>
+          <option value="0.80">Monolith (ε ≈ 0.80)</option>
+          <option value="custom">Custom porosity…</option>
+        </select>
+      </label>
+      <label id="c_epsw" hidden>Total porosity ε<input type="number" id="c_eps" value="0.65" step="0.01"></label>
+      <label>Flow rate <span class="u">mL/min</span><input type="number" id="c_F" value="1.0" step="any"></label>
+      <label>System dwell volume <span class="u">mL</span><input type="number" id="c_D" value="1.0" step="any"></label>
+      <label>Re-equilibration <span class="u">column volumes</span><input type="number" id="c_cv" value="10" step="any"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Sequence</legend>
+      <label>Run time (incl. re-equilibration) <span class="u">min</span><input type="number" id="c_rt" value="20" step="any"></label>
+      <label>Number of injections<input type="number" id="c_n" value="50" step="1"></label>
+      <label>Average %B over the run<input type="number" id="c_b" value="40" step="any"></label>
+      <label>Extra for priming / blanks <span class="u">%</span><input type="number" id="c_extra" value="15" step="any"></label>
+    </fieldset>
+  </div>
+  <div class="results" id="c_out"></div>
+  <details class="theory">
+    <summary>Equations used</summary>
+    <ul>
+      <li>V<sub>m</sub> ≈ ε · π (d<sub>c</sub>/2)² · L; t<sub>0</sub> = V<sub>m</sub>/F</li>
+      <li>Linear velocity u = L/t<sub>0</sub></li>
+      <li>Dwell time t<sub>D</sub> = V<sub>D</sub>/F — the delay before the gradient reaches the column head</li>
+      <li>Re-equilibration time = (n · V<sub>m</sub> + V<sub>D</sub>)/F</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ============ UNITS ============ -->
+<section id="units" class="panel" role="tabpanel" hidden>
+  <h2>Unit conversions</h2>
+  <h3>Pressure</h3>
+  <div class="grid3" id="u_press">
+    <label>bar<input type="number" data-u="bar" value="400" step="any"></label>
+    <label>psi<input type="number" data-u="psi" step="any"></label>
+    <label>MPa<input type="number" data-u="mpa" step="any"></label>
+    <label>kPa<input type="number" data-u="kpa" step="any"></label>
+    <label>atm<input type="number" data-u="atm" step="any"></label>
+    <label>kgf/cm²<input type="number" data-u="kgf" step="any"></label>
+  </div>
+  <h3>Concentration</h3>
+  <div class="grid3">
+    <label>Molecular weight <span class="u">g/mol</span><input type="number" id="u_mw" value="180.16" step="any"></label>
+    <label>Concentration<input type="number" id="u_cv" value="1" step="any"></label>
+    <label>Unit<select id="u_cu">
+      <option value="mgml">mg/mL (= g/L)</option>
+      <option value="ugml">µg/mL (= ppm, aqueous)</option>
+      <option value="ngml">ng/mL (= ppb, aqueous)</option>
+      <option value="m">mol/L (M)</option>
+      <option value="mm">mmol/L (mM)</option>
+      <option value="um">µmol/L (µM)</option>
+    </select></label>
+  </div>
+  <div class="results" id="u_conc"></div>
+  <h3>Flow ↔ linear velocity</h3>
+  <div class="grid3">
+    <label>Column i.d. <span class="u">mm</span><input type="number" id="u_d" value="2.1" step="any"></label>
+    <label>Total porosity ε<input type="number" id="u_eps" value="0.65" step="0.01"></label>
+    <label>Flow rate <span class="u">mL/min</span><input type="number" id="u_F" value="0.4" step="any"></label>
+  </div>
+  <div class="results" id="u_vel"></div>
+</section>
+
+</main>
+
+<footer class="wrap site-foot">
+  <p>Calculations are estimates for method development and planning. Verify regulated-method changes against the current official pharmacopeia and confirm system suitability experimentally.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
